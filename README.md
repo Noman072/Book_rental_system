@@ -100,16 +100,19 @@ python manage.py runserver
 ### Option 1: Complete Setup with Dummy Data
 
 ```powershell
-# 1. Activate virtual environment
+
+# 1. Create  virtual environment
+python -m venv venv
+# 2. Activate virtual environment
 .venv\Scripts\Activate.ps1
 
-# 2. Run migrations
+# 3. Run migrations
 python manage.py migrate
 
-# 3. Create admin and dummy data (10 users + 10 books)
+# 4. Create admin and dummy data (10 users + 10 books)
 python create_dummy_users.py --all 10
 
-# 4. Start server
+# 5. Start server
 python manage.py runserver
 ```
 
@@ -338,27 +341,6 @@ python unit_test.py
 6. ✅ Book return workflow
 7. ✅ Multiple students renting same book
 8. ✅ OpenLibrary API integration (real API call)
-
-### Django Unit Tests
-
-Run Django's built-in tests:
-
-```powershell
-python manage.py test rentals
-```
-
-### Test Options
-
-```powershell
-# Setup dummy data without running tests
-python unit_test.py --setup
-
-# Create only users
-python unit_test.py --users
-
-# Create only books
-python unit_test.py --books
-```
 
 
 
