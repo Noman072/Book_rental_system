@@ -1,0 +1,107 @@
+{% extends 'rentals/admin/base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon">📚</div>
+        <h3>Total Books</h3>
+        <div class="value">{{ total_books }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="icon">👥</div>
+        <h3>Students</h3>
+        <div class="value">{{ total_students }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="icon">✅</div>
+        <h3>Active Rentals</h3>
+        <div class="value">{{ active_rentals }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="icon">📋</div>
+        <h3>Total Rentals</h3>
+        <div class="value">{{ total_rentals }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Recent Rentals</h3>
+        <a href="{% url 'rental_list' %}" class="btn btn-sm">View All</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Rental Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Charges</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rental in recent_rentals %}
+                <tr>
+                    <td>{{ rental.user.get_full_name|default:rental.user.username }}</td>
+                    <td>{{ rental.book.title }}</td>
+                    <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+                    <td>{{ rental.due_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="badge badge-{% if rental.status == 'active' %}success{% elif rental.status == 'returned' %}secondary{% else %}danger{% endif %}">
+                            {{ rental.status|upper }}
+                        </span>
+                    </td>
+                    <td>${{ rental.total_charges }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        No rentals yet. <a href="{% url 'new_rental' %}">Create the first one!</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <a href="{% url 'new_rental' %}" class="btn btn-success" style="display: block; margin-bottom: 10px; text-align: center;">
+                ➕ Create New Rental
+            </a>
+            <a href="{% url 'student_dashboard' %}" class="btn" style="display: block; margin-bottom: 10px; text-align: center;">
+                👥 View Student Dashboard
+            </a>
+            <a href="{% url 'book_list' %}" class="btn" style="display: block; text-align: center;">
+                📚 Browse Books
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3>System Info</h3>
+        </div>
+        <div class="card-body">
+            <p style="margin-bottom: 15px;">
+                <strong>Logged in as:</strong> {{ user.username }}
+            </p>
+            <p style="margin-bottom: 15px;">
+                <strong>Pricing:</strong> First month FREE, then $[pages ÷ 100]/month
+            </p>
+            <p>
+                <strong>OpenLibrary API:</strong> ✅ Integrated
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

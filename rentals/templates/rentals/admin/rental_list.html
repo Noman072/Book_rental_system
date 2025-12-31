@@ -1,0 +1,96 @@
+{% extends 'rentals/admin/base.html' %}
+
+{% block page_title %}All Rentals{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>All Rentals</h3>
+        <a href="{% url 'new_rental' %}" class="btn btn-success">➕ New Rental</a>
+    </div>
+    <div class="card-body">
+        <div class="search-bar">
+            <form method="get" style="display: flex; gap: 10px; flex: 1;">
+                <input type="text" name="search" value="{{ search }}" placeholder="Search by student or book..." class="form-control">
+                <select name="status" class="form-control" style="flex: 0 0 200px;">
+                    <option value="">All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="returned" {% if status_filter == 'returned' %}selected{% endif %}>Returned</option>
+                </select>
+                <button type="submit" class="btn">Search</button>
+                {% if search or status_filter %}
+                    <a href="{% url 'rental_list' %}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Pages</th>
+                    <th>Rental Date</th>
+                    <th>Due Date</th>
+                    <th>Extended</th>
+                    <th>Status</th>
+                    <th>Charges</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rental in rentals %}
+                <tr>
+                    <td>#{{ rental.id }}</td>
+                    <td>
+                        <strong>{{ rental.user.get_full_name|default:rental.user.username }}</strong><br>
+                        <small style="color: #7f8c8d;">{{ rental.user.username }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ rental.book.title }}</strong><br>
+                        <small style="color: #7f8c8d;">by {{ rental.book.author|default:"Unknown" }}</small>
+                    </td>
+                    <td>{{ rental.book.number_of_pages }}</td>
+                    <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+                    <td>
+                        {{ rental.due_date|date:"M d, Y" }}
+                        {% if rental.is_overdue and rental.status == 'active' %}
+                            <br><span class="badge badge-danger">OVERDUE</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ rental.months_extended }} month(s)</td>
+                    <td>
+                        <span class="badge badge-{% if rental.status == 'active' %}success{% else %}secondary{% endif %}">
+                            {{ rental.status|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>${{ rental.total_charges }}</strong><br>
+                        <small style="color: #7f8c8d;">${{ rental.book.monthly_rental_fee }}/mo</small>
+                    </td>
+                    <td>
+                        {% if rental.status == 'active' %}
+                            <a href="{% url 'extend_rental' rental.id %}" class="btn btn-sm">Extend</a>
+                            <a href="{% url 'mark_returned' rental.id %}" class="btn btn-sm btn-secondary" onclick="return confirm('Mark as returned?')">Return</a>
+                        {% else %}
+                            <span style="color: #95a5a6;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 40px;">
+                        No rentals found. <a href="{% url 'new_rental' %}">Create one now!</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

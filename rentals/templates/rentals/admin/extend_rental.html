@@ -1,0 +1,73 @@
+{% extends 'rentals/admin/base.html' %}
+
+{% block page_title %}Extend Rental{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    <div class="card-header">
+        <h3>Extend Rental #{{ rental.id }}</h3>
+    </div>
+    <div class="card-body">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+            <h4 style="margin-bottom: 15px;">Rental Details</h4>
+            <table style="width: 100%;">
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Student:</td>
+                    <td style="padding: 8px 0;">{{ rental.user.get_full_name|default:rental.user.username }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Book:</td>
+                    <td style="padding: 8px 0;">{{ rental.book.title }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Pages:</td>
+                    <td style="padding: 8px 0;">{{ rental.book.number_of_pages }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Monthly Fee:</td>
+                    <td style="padding: 8px 0;">${{ rental.book.monthly_rental_fee }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Rental Date:</td>
+                    <td style="padding: 8px 0;">{{ rental.rental_date|date:"M d, Y" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Current Due Date:</td>
+                    <td style="padding: 8px 0;">{{ rental.due_date|date:"M d, Y" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px 0; font-weight: 500;">Already Extended:</td>
+                    <td style="padding: 8px 0;">{{ rental.months_extended }} month(s)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: 500;">Current Charges:</td>
+                    <td style="padding: 8px 0;"><strong>${{ rental.total_charges }}</strong></td>
+                </tr>
+            </table>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="months">Extend by (months):</label>
+                <select name="months" id="months" class="form-control" required>
+                    <option value="1">1 month - ${{ rental.book.monthly_rental_fee }}</option>
+                    <option value="2">2 months - ${{ rental.book.monthly_rental_fee|floatformat:2|add:"0"|add:rental.book.monthly_rental_fee|floatformat:2 }}</option>
+                    <option value="3">3 months - ${{ rental.book.monthly_rental_fee|floatformat:2|add:"0"|add:rental.book.monthly_rental_fee|floatformat:2|add:rental.book.monthly_rental_fee|floatformat:2 }}</option>
+                    <option value="6">6 months</option>
+                    <option value="12">12 months</option>
+                </select>
+                <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                    Charges will be automatically calculated and applied
+                </small>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success">✓ Extend Rental</button>
+                <a href="{% url 'rental_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

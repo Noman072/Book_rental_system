@@ -1,0 +1,231 @@
+{% extends 'rentals/admin/base.html' %}
+
+{% block page_title %}New Rental{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Create New Rental</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" id="rentalForm">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="user">Student *</label>
+                <select name="user" id="user" class="form-control" required>
+                    <option value="">Select a student...</option>
+                    {% for student in students %}
+                        <option value="{{ student.id }}">
+                            {{ student.get_full_name|default:student.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="bookSearch">Search Book by Title *</label>
+                <input 
+                    type="text" 
+                    id="bookSearch" 
+                    class="form-control" 
+                    placeholder="Type book title (e.g., Pride and Prejudice)..."
+                    autocomplete="off"
+                >
+                <div id="searchStatus" style="margin-top: 8px; font-size: 0.9rem; color: #7f8c8d;"></div>
+            </div>
+            
+            <!-- Book result container -->
+            <div id="bookResult" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 15px; color: #2c3e50;">Selected Book</h4>
+                <div style="display: flex; gap: 20px;">
+                    <div id="bookCover" style="flex-shrink: 0;">
+                        <!-- Cover image will be inserted here -->
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <h3 id="bookTitle" style="margin-bottom: 8px;"></h3>
+                        <p id="bookAuthor" style="color: #7f8c8d; margin-bottom: 15px;"></p>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                            <div style="padding: 12px; background: white; border-radius: 6px;">
+                                <div style="font-size: 0.85rem; color: #7f8c8d;">Pages</div>
+                                <div id="bookPages" style="font-weight: bold; font-size: 1.2rem;"></div>
+                            </div>
+                            <div style="padding: 12px; background: white; border-radius: 6px;">
+                                <div style="font-size: 0.85rem; color: #7f8c8d;">Monthly Fee</div>
+                                <div id="bookFee" style="font-weight: bold; font-size: 1.2rem; color: #27ae60;"></div>
+                            </div>
+                        </div>
+                        <p style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-left: 4px solid #3498db; border-radius: 4px; font-size: 0.9rem;">
+                            <strong>Note:</strong> First month is free. Subsequent months will be charged at $<span id="feeAmount"></span>/month.
+                        </p>
+                    </div>
+                </div>
+                <input type="hidden" name="book_data" id="bookData">
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn" id="submitBtn" disabled>
+                    Create Rental
+                </button>
+                <a href="{% url 'rental_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.searching {
+    border-color: #3498db !important;
+    background: #f0f8ff;
+}
+
+.error-input {
+    border-color: #e74c3c !important;
+}
+
+.success-input {
+    border-color: #27ae60 !important;
+}
+</style>
+
+<script>
+let searchTimeout;
+let currentBookData = null;
+
+const bookSearchInput = document.getElementById('bookSearch');
+const searchStatus = document.getElementById('searchStatus');
+const bookResult = document.getElementById('bookResult');
+const submitBtn = document.getElementById('submitBtn');
+const bookDataInput = document.getElementById('bookData');
+
+bookSearchInput.addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    
+    // Clear previous timeout
+    clearTimeout(searchTimeout);
+    
+    // Reset state
+    bookResult.style.display = 'none';
+    currentBookData = null;
+    submitBtn.disabled = true;
+    bookDataInput.value = '';
+    
+    if (query.length < 3) {
+        searchStatus.textContent = query.length > 0 ? 'Type at least 3 characters...' : '';
+        searchStatus.style.color = '#7f8c8d';
+        bookSearchInput.classList.remove('searching', 'error-input', 'success-input');
+        return;
+    }
+    
+    // Show searching state
+    searchStatus.textContent = 'Searching...';
+    searchStatus.style.color = '#3498db';
+    bookSearchInput.classList.add('searching');
+    bookSearchInput.classList.remove('error-input', 'success-input');
+    
+    // Debounce: wait 800ms after user stops typing
+    searchTimeout = setTimeout(() => {
+        searchBook(query);
+    }, 800);
+});
+
+async function searchBook(query) {
+    try {
+        const response = await fetch(`{% url 'search_book_ajax' %}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        bookSearchInput.classList.remove('searching');
+        
+        if (data.success) {
+            // Success!
+            currentBookData = data.book;
+            displayBookResult(data.book);
+            searchStatus.textContent = '✓ Book found!';
+            searchStatus.style.color = '#27ae60';
+            bookSearchInput.classList.add('success-input');
+            submitBtn.disabled = false;
+            bookDataInput.value = JSON.stringify(data.book);
+        } else {
+            // Error
+            searchStatus.textContent = '✗ ' + data.error;
+            searchStatus.style.color = '#e74c3c';
+            bookSearchInput.classList.add('error-input');
+        }
+    } catch (error) {
+        bookSearchInput.classList.remove('searching');
+        searchStatus.textContent = '✗ Network error. Please try again.';
+        searchStatus.style.color = '#e74c3c';
+        bookSearchInput.classList.add('error-input');
+    }
+}
+
+function displayBookResult(book) {
+    // Show cover image
+    const coverDiv = document.getElementById('bookCover');
+    if (book.cover_image_url) {
+        coverDiv.innerHTML = `<img src="${book.cover_image_url}" alt="${book.title}" style="width: 120px; height: 180px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">`;
+    } else {
+        coverDiv.innerHTML = `<div style="width: 120px; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 3rem;">📖</div>`;
+    }
+    
+    // Fill in book details
+    document.getElementById('bookTitle').textContent = book.title;
+    document.getElementById('bookAuthor').textContent = 'by ' + (book.author || 'Unknown Author');
+    document.getElementById('bookPages').textContent = book.number_of_pages;
+    document.getElementById('bookFee').textContent = '$' + book.monthly_fee.toFixed(2);
+    document.getElementById('feeAmount').textContent = book.monthly_fee.toFixed(2);
+    
+    // Show result container
+    bookResult.style.display = 'block';
+    
+    // Smooth scroll to result
+    bookResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Form validation
+document.getElementById('rentalForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('user').value) {
+        e.preventDefault();
+        alert('Please select a student.');
+        return;
+    }
+    
+    if (!currentBookData) {
+        e.preventDefault();
+        alert('Please search and select a book.');
+        return;
+    }
+});
+</script>
+{% endblock %}

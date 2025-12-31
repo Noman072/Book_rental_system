@@ -1,0 +1,94 @@
+{% extends 'rentals/admin/base.html' %}
+
+{% block page_title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Student Dashboard</h3>
+        <a href="{% url 'new_rental' %}" class="btn btn-success">➕ New Rental</a>
+    </div>
+</div>
+
+{% for data in student_data %}
+<div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div>
+            <h3 style="color: white; margin-bottom: 5px;">
+                {{ data.student.get_full_name|default:data.student.username }}
+            </h3>
+            <p style="margin: 0; opacity: 0.9;">{{ data.student.username }} • {{ data.student.email }}</p>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 1.8rem; font-weight: bold;">${{ data.total_charges }}</div>
+            <div style="opacity: 0.9;">Total Charges</div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #3498db;">{{ data.total_rentals }}</div>
+                <div style="color: #7f8c8d; font-size: 0.9rem;">Total Rentals</div>
+            </div>
+            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #27ae60;">{{ data.active_rentals }}</div>
+                <div style="color: #7f8c8d; font-size: 0.9rem;">Active Rentals</div>
+            </div>
+            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #e74c3c;">${{ data.total_charges }}</div>
+                <div style="color: #7f8c8d; font-size: 0.9rem;">Total Fees</div>
+            </div>
+        </div>
+        
+        {% if data.rentals %}
+        <h4 style="margin-bottom: 15px;">Recent Rentals</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Rental Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Charges</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rental in data.rentals %}
+                <tr>
+                    <td>
+                        <strong>{{ rental.book.title }}</strong><br>
+                        <small style="color: #7f8c8d;">{{ rental.book.number_of_pages }} pages</small>
+                    </td>
+                    <td>{{ rental.rental_date|date:"M d, Y" }}</td>
+                    <td>{{ rental.due_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="badge badge-{% if rental.status == 'active' %}success{% else %}secondary{% endif %}">
+                            {{ rental.status|upper }}
+                        </span>
+                    </td>
+                    <td><strong>${{ rental.total_charges }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if data.total_rentals > 5 %}
+        <p style="text-align: center; margin-top: 15px;">
+            <a href="{% url 'rental_list' %}?search={{ data.student.username }}" class="btn btn-sm">
+                View all {{ data.total_rentals }} rentals →
+            </a>
+        </p>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<div class="card">
+    <div class="card-body" style="text-align: center; padding: 60px;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">📚</div>
+        <h3>No Students with Rentals Yet</h3>
+        <p style="color: #7f8c8d; margin: 15px 0;">Create the first rental to see student data here.</p>
+        <a href="{% url 'new_rental' %}" class="btn btn-success">Create First Rental</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
